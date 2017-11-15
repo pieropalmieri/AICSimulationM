@@ -24,9 +24,9 @@ bench = AICsimP(N,M); %crea ogetto AICsim->Funzioni: Calibrate; generateAndAcqui
 % for jitt=0
 % for W=100:10:100
 % for W=0:100:300;
-W=100;
+W=0;
 figure;
-jitt=4;
+jitt=0;
         for randomj=1:1;
             prbsa=randi(2,N+2,1)-1; %dirac pulse +2
             
@@ -49,8 +49,8 @@ jitt=4;
         i=1;
         hold on;
 %         figure;
-        fasemisurate=[ .5 ];
-%         fasemisurate=[0 .1 .5 .9 1];
+%         fasemisurate=[ .5 ];
+        fasemisurate=[0 .1 .7 ];
         for f=1:length(fasemisurate);
             phi = 2*pi*fasemisurate(f);
             
@@ -75,40 +75,80 @@ jitt=4;
             epsilon=[1e-8 1.5573827825e-8 2e-8 1e-7 1e-6 1e-5 1e-4 1e-3 1e-2 1e-1 1 10];
 %             epsilon=[2.5e-16 1e-15 1e-14 1e-13 1e-12 1e-11  1e-10  1e-9 1e-8 2e-8 1e-7 1e-6 ];
 %             epsilon=[3e-16 1e-15 1e-14 1e-13 1e-12 1e-11  1e-10  1e-9 1e-8 2e-8 1e-7 1e-6 ];
-            for k=1:length(epsilon)
+            epsilon=[ 1 2]
+                for k=1:length(epsilon)
                 lun=length(epsilon)*(i-1);
-                [xest,xp]=bench.reconstruct(y(i,:)','Dantzig',epsilon(k)); % crea Psi e moltiplica per measurementMatrix poi l1magic
+                [xest,xp]=bench.reconstruct(y(i,:)','CoSaMP',epsilon(k)); % crea Psi e moltiplica per measurementMatrix poi l1magic
                 Xest(:,k+lun) = fft(xest)/N;
 %                     figure(2*iter);
 %                     plot(0:N/2,db(abs(Xest(1:N/2+1,k+lun))));
 %                     hold on;
 %                     plot(freqVec,ampVec,'or');
 %                     hold off
+%PRECENDETEMENTE ERA COSI' E FUNZIONANTE, SOSTITUISCO QUELLO PER 2 MASSIMI
+%DISTINTI
+%                 Xest(1,k+lun)=0;
+%                 maxXest=find(abs(Xest(:,k+lun))==max(abs(Xest(:,k+lun))));
+%                 Xest2=Xest(:,k+lun);
+%                 Xest2(maxXest(1),1)=0;
+%                 Xest2(maxXest(2),1)=0;
+%                 maxXest2=find(abs(Xest2(:,1))==max(abs(Xest2(:,1))),2);
+% 
+%                 SFDR(i,k)=20*log10((abs(Xest(maxXest(1),k+lun)))/(abs(Xest2(maxXest2(1),1))));
+%                 SINAD(i,k)=20*log10(sqrt(((N-3)/N)*((2*((abs(Xest(maxXest(1),k+lun))).^2))/(sum(abs(Xest2(:,1)).^2)))));
                 Xest(1,k+lun)=0;
-                maxXest=find(abs(Xest(:,k+lun))==max(abs(Xest(:,k+lun))));
+                maxXest(k+lun)=find(abs(Xest(1:N,k+lun))==max(abs(Xest(1:N,k+lun))),1);
                 Xest2=Xest(:,k+lun);
-                Xest2(maxXest(1),1)=0;
-                Xest2(maxXest(2),1)=0;
-                maxXest2=find(abs(Xest2(:,1))==max(abs(Xest2(:,1))),2);
+                if maxXest(k+lun)>N/2
+%                     maxXest(k+lun)=maxXest(k+lun)-N/2;
+%                 Xest2(N/2+maxXest(k+lun),1)=0;
+%                 Xest2(N/2+1-maxXest(k+lun)+1,1)=0;
+                Xest2(maxXest(k+lun),1)=0;
+                Xest2(N-maxXest(k+lun)+2,1)=0;
+%                 xest2(maxXest(2),1)=0;
+                maxXest2=find(abs(Xest2(1:N,1))==max(abs(Xest2(1:N,1))));
+                  if maxXest(k+lun) ~= N-freqVec(1)+1 %304 %466
+                    SFDR(i,k)=-100;
+                    SINAD(i,k)=-100;
+                  else
+%                 SFDR(k)=20*log10((abs(Xest(N/2+maxXest(k+lun),k+lun)))/(abs(Xest2(N/2+maxXest2(1),1))));
+%                 SINAD(k)=20*log10(sqrt(((N-3)/N)*((2*((abs(Xest(N/2+maxXest(k+lun),k+lun))).^2))/(sum(abs(Xest2(:,1)).^2)))));
+                SFDR(i,k)=20*log10((abs(Xest(maxXest(k+lun),k+lun)))/(abs(Xest2(maxXest2(1),1))));
+                SINAD(i,k)=20*log10(sqrt(((N-3)/N)*((2*((abs(Xest(maxXest(k+lun),k+lun))).^2))/(sum(abs(Xest2(:,1)).^2)))));
+                  end
+                else
+%                      Xest2(maxXest(k+lun),1)=0;
+%                      Xest2(N-1-maxXest(k+lun)-1,1)=0;
+                     Xest2(maxXest(k+lun),1)=0;
+                     Xest2(N+1-maxXest(k+lun)+1,1)=0;
+                     maxXest2=find(abs(Xest2(1:N,1))==max(abs(Xest2(1:N,1))));
+                 if maxXest(k+lun) ~= freqVec(1)+1  %210 %48
+                    SFDR(i,k)=-100;
+                    SINAD(i,k)=-100;
+                  else
+                SFDR(i,k)=20*log10((abs(Xest(maxXest(k+lun),k+lun)))/(abs(Xest2(maxXest2(1),1))));
+                SINAD(i,k)=20*log10(sqrt(((N-3)/N)*((2*((abs(Xest(maxXest(k+lun),k+lun))).^2))/(sum(abs(Xest2(:,1)).^2)))));
+                  end
+                end
 
-                SFDR(i,k)=20*log10((abs(Xest(maxXest(1),k+lun)))/(abs(Xest2(maxXest2(1),1))));
-                SINAD(i,k)=20*log10(sqrt(((N-3)/N)*((2*((abs(Xest(maxXest(1),k+lun))).^2))/(sum(abs(Xest2(:,1)).^2)))));
-            end
+%             figure;
+%             plot(0:N-1,(abs(Xest(1:N,3))));
+                end
 %             figure(2*iter+1);
             hold on
             semilogx(epsilon(:),SINAD(i,:),'-o');
-            set(gca,'xscale','log')
+%             set(gca,'xscale','log')
             xlabel('Epsilon')
             ylabel('SINAD')
             grid on
             hold off
-%             legendInfo{i} = ['Fase = ' num2str(fasemisurate(f))];
+            legendInfo{i} = ['Fase = ' num2str(fasemisurate(f))];
             i=i+1;
 %          end
         end
-%     legend(legendInfo);
+    legend(legendInfo);
         end
-    title(['Random Jitter per W=' num2str(W)]);
+    title([num2str(jitt) ' Jitter per W=' num2str(W)]);
 % end
 % end
 

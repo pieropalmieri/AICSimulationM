@@ -153,7 +153,7 @@ classdef AICBenchP<handle
                 ampiezza=(49.10-(-47.79))/2/1000;
                 prbs_nojitter=1/ampiezza*prbs_nojitter;
                 
-%                 prbs_nojitterD = (randi(2,N,1)-1)*2-1;
+%                 prbs_nojitterD = (randi(2,N*campioni,1)-1)*2-1;
 %                 obj.prbs=zeros(campioni*N,1);
 %                 obj.prbs(1:campioni:campioni*N,1)=prbs_nojitterD(1:end,1);
                 
